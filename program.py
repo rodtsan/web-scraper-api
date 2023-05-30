@@ -3,11 +3,11 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from time import sleep
 from selenium import webdriver
+from selenium.webdriver.chromium.service import Service
 from bs4 import BeautifulSoup, SoupStrainer
-import chromedriver_binary
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy import select, exists
+from sqlalchemy import select
 from Shema import *
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ engine = create_engine("sqlite:///sm_db.db", echo=True)
 Base.metadata.create_all(engine)
 
 
-@app.route("/api/")
+@app.route("/")
 def main():
     return jsonify({"status": "healty"})
 
@@ -25,17 +25,21 @@ def main():
 @app.route("/api/linkedin")
 def get_linkedin_data():
     options = webdriver.ChromeOptions()
-    # options.add_argument(
-    #     "--user-data-dir=C:/Users/Rodrigo/AppData/Local/Google/Chrome/User Data"
-    # )
-    # options.add_argument("--profile-directory=Default")
-    # options.add_argument("--ignore-certificate-errors")
-    # options.add_argument('--incognito')
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_argument(
+        "--user-data-dir=/home/rodrigo/snap/chromium/common/chromium/"
+    )
+    options.add_argument("--profile-directory=Default")
+    options.add_argument("--ignore-certificate-errors")
+    # # options.add_argument('--incognito')
     options.add_argument("--headless")
     options.add_argument("--log-level=3")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-infobars")
-    driver = webdriver.Chrome(options=options)
+    # driver = webdriver.Chrome(options=options)
+    chrome_service = Service("/snap/chromium/2477/usr/lib/chromium-browser/chromedriver")
+    driver = webdriver.Chrome(options=options, service=chrome_service)
     driver.get("https://www.linkedin.com/")
 
     sleep(2)
@@ -250,4 +254,5 @@ def get_linkedin_authors():
 
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
