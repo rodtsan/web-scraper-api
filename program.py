@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from time import sleep
 from selenium import webdriver
-from selenium.webdriver.chromium.service import Service
+from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup, SoupStrainer
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
