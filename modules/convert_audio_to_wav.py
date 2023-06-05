@@ -22,8 +22,9 @@ def convert_audio_to_wav():
                 convert.export(dest_file_dest, format="wav")
                 return jsonify(
                     {
-                        "job_id": dest_file_name.split("_")[0],
+                        "job_id": uuid4(),
                         "filename": dest_file_name,
+                        "content_type": "audio/wav",
                         "message": "Audio has been converted to wav",
                     }
                 )

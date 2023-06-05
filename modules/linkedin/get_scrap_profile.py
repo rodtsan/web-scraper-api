@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 @app.route("/api/linkedin/web-scrape-page")
 async def web_scrap_profile():
-    profile_url = request.args.get("profile_url")
+    profile_url = request.args.get("url")
     if not profile_url:
        return make_response({ "message": "url paramater was not provider" })
    
