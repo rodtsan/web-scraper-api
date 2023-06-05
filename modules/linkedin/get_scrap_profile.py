@@ -1,50 +1,42 @@
+# Import Libraries
 import re
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 from time import sleep
-from selenium import webdriver
+from datetime import datetime
+
 from bs4 import BeautifulSoup, SoupStrainer
-import chromedriver_binary
-from sqlalchemy import create_engine
+from Schema import Post, Profile
+from app import app, db
+from flask import jsonify, make_response, request
+from selenium import webdriver
 from sqlalchemy.orm import Session
-from sqlalchemy import select, exists
-from Shema import *
-
-app = Flask(__name__)
-CORS(app)
-
-engine = create_engine("sqlite:///sm_db.db", echo=True)
-Base.metadata.create_all(engine)
 
 
-@app.route("/api/")
-def main():
-    return jsonify({"status": "healty"})
-
-
-@app.route("/api/linkedin")
-def get_linkedin_data():
+@app.route("/api/linkedin/web-scrape-page")
+async def web_scrap_profile():
+    profile_url = request.args.get("profile_url")
+    if not profile_url:
+       return make_response({ "message": "url paramater was not provider" })
+   
     options = webdriver.ChromeOptions()
-    # options.add_argument(
-    #     "--user-data-dir=C:/Users/Rodrigo/AppData/Local/Google/Chrome/User Data"
-    # )
-    # options.add_argument("--profile-directory=Default")
-    # options.add_argument("--ignore-certificate-errors")
-    # options.add_argument('--incognito')
+    options.add_argument(
+        "--user-data-dir=C:/Users/Rodrigo/AppData/Local/Google/Chrome/User Data/"
+    )
+    options.add_argument("--profile-directory=Default")
+    options.add_argument("--ignore-certificate-errors")
     options.add_argument("--headless")
     options.add_argument("--log-level=3")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-infobars")
     driver = webdriver.Chrome(options=options)
     driver.get("https://www.linkedin.com/")
-
+    
     sleep(2)
-    request_url = request.args.get("url")
-    linkedin_url = request_url
-    if request_url[len(request_url) - 1] == "/":
-        linkedin_url = request_url + "recent-activity/all/"
+    
+    linkedin_url = profile_url   
+    if profile_url[len(profile_url) - 1] == "/":
+        linkedin_url = profile_url + "recent-activity/all/"
     else:
-        linkedin_url = request_url + "/recent-activity/all/"
+        linkedin_url = profile_url + "/recent-activity/all/"
 
     driver.get(linkedin_url)
     sleep(2)
@@ -61,8 +53,8 @@ def get_linkedin_data():
             bs = BeautifulSoup(driver.page_source, "lxml", parse_only=parse_only)
 
             sider_bar = bs.find("div", class_="scaffold-layout__sidebar")
-            sider_bar_inner = sider_bar.find('div', id="recent-activity-top-card")
-            
+            sider_bar_inner = sider_bar.find("div", id="recent-activity-top-card")
+
             profile_name = sider_bar_inner.find("h3").get_text().strip()
             profile_desc = sider_bar_inner.find("h4").get_text().strip()
 
@@ -94,9 +86,7 @@ def get_linkedin_data():
                     "div", class_="update-components-actor__meta"
                 )
                 author_name_element = (
-                    meta_element.find(
-                        "span", class_="update-components-actor__title"
-                    )
+                    meta_element.find("span", class_="update-components-actor__title")
                     .find("span")
                     .find("span")
                 )
@@ -131,7 +121,7 @@ def get_linkedin_data():
                     break
 
         except Exception as ex:
-            print(f'{ex.args.__repr__()}')
+            print(f"{ex.args.__repr__()}")
             pass
     else:
         error_message = f"Wrong url source {current_url}"
@@ -143,12 +133,10 @@ def get_linkedin_data():
     else:
         if len(current_posts) > 0:
             try:
+                engine = db.get_engine()
                 with Session(engine) as session:
-                    query = select(Profile).where(Profile.name == profile_name.strip())
-                    profile = session.scalar(query)
-                    now = datetime.now()
+                    profile = session.query(Profile).where(Profile.name == profile_name.strip()).first()
                     if profile == None:
-                        print("null")
                         posts = [
                             Post(
                                 name=post.get("name"),
@@ -159,19 +147,17 @@ def get_linkedin_data():
                             )
                             for post in current_posts
                         ]
-
                         profile = Profile(
                             name=profile_name,
                             description=profile_desc,
-                            link=request_url,
+                            link=profile_url,
                             email="",
-                            date_added=now.strftime("%m/%d/%Y, %H:%M:%S"),
+                            date_added=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                             posts=posts,
                         )
                         session.add(profile)
                         session.commit()
                     else:
-                        print("not null")
                         if len(profile.posts) > 0:
                             saved_comments = [post.comments for post in profile.posts]
                             new_posts = []
@@ -210,44 +196,10 @@ def get_linkedin_data():
             except Exception as ex:
                 return jsonify({"error": ex.args.__repr__()})
     return jsonify(
-        {"name": profile_name, "description": profile_desc, "link": request_url, "posts": current_posts}
+        {
+            "name": profile_name,
+            "description": profile_desc,
+            "link": profile_url,
+            "posts": current_posts,
+        }
     )
-
-
-@app.route("/api/linkedin/authors")
-def get_linkedin_authors():
-    profiles = []
-    try:
-        with Session(engine) as session:
-            results = session.query(Profile).order_by(Profile.date_added).all()
-            profiles = [
-                {
-                    "id": profile.id,
-                    "name": profile.name,
-                    "email": profile.email,
-                    "description": profile.description,
-                    "link": profile.link,
-                    "date_added": profile.date_added,
-                    "posts": [
-                        {
-                            "name": post.name,
-                            "description": post.description,
-                            "posted_by": post.posted_by,
-                            "comments": post.comments,
-                            "date_posted": post.date_posted,
-                        }
-                        for post in profile.posts
-                    ],
-                }
-                for profile in results
-            ]
-            session.close()
-
-    except Exception as ex:
-        return jsonify({"error": ex.args.__repr__()})
-
-    return jsonify(profiles)
-
-
-if __name__ == "__main__":
-    app.run(port=8000)
