@@ -1,6 +1,6 @@
 from app import app, db
 from flask import jsonify
-from Schema import Post
+from data.Schema import Post
 from sqlalchemy.orm import Session
 
 def __map_post(post: Post) -> dict[str, any]:
@@ -20,7 +20,7 @@ async def get_posts_by_profile(profile_id=None):
         with Session(engine) as session:
             posts = session.query(Post).where(Post.profile_id == profile_id).all()
             posts_list = [
-                __map_post(post)
+                post.to_dict()
                 for post in posts
             ]
             session.close()
@@ -29,7 +29,7 @@ async def get_posts_by_profile(profile_id=None):
         with Session(engine) as session:
             posts = session.query(Post).order_by(Post.date_posted).all()
             posts_list = [
-                __map_post(post)
+                post.to_dict()
                 for post in posts
             ]
             session.close()

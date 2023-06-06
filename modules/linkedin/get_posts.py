@@ -1,16 +1,16 @@
 from app import app, db
 from flask import Blueprint, Response, abort, json, request, jsonify
-from Schema import Post
+from data.Schema import Post
 from sqlalchemy.orm import Session
 
-def __map_post(post: Post) -> dict[str, any]:
-    return {
-        "name": post.name,
-        "description": post.description,
-        "posted_by": post.posted_by,
-        "comments": post.comments,
-        "date_posted": post.date_posted,
-    }
+# def __map_post(post: Post) -> dict[str, any]:
+#     return {
+#         "name": post.name,
+#         "description": post.description,
+#         "posted_by": post.posted_by,
+#         "comments": post.comments,
+#         "date_posted": post.date_posted,
+#     }
 
 
 @app.route("/api/linkedin/posts")
@@ -22,14 +22,14 @@ async def get_posts(post_id:int=0):
             if int(post_id) > 0:
                 with Session(engine) as session:
                     post = session.query(Post).where(Post.id == post_id).first()
-                    post_dict = __map_post(post)
+                    post_dict = post.to_dict()
                     session.close()
                     return jsonify(post_dict)
             else:
                 with Session(engine) as session:
                     posts = session.query(Post).order_by(Post.date_posted).all()
                     posts_list = [
-                        __map_post(post)
+                        post.to_dict()
                         for post in posts
                     ]
                     session.close()

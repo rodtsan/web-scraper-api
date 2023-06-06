@@ -4,7 +4,7 @@ from time import sleep
 from datetime import datetime
 
 from bs4 import BeautifulSoup, SoupStrainer
-from Schema import Post, Profile
+from data.Schema import Post, Profile
 from app import app, db
 from flask import jsonify, make_response, request
 from selenium import webdriver
