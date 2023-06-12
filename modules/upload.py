@@ -14,7 +14,8 @@ def audio_upload_func():
         ext = content_type.split("/").pop()
         if ext in __audio_formats:
             new_filename = f"{uuid4()}_{req_file.filename}"
-            req_file.save(os.path.join(app.config["UPLOAD_DIR"], new_filename))
+            file_path = f"{os.getcwd()}/uploads/{new_filename}"
+            req_file.save(file_path)
             return jsonify(
                 {
                     "job_id": new_filename.split("_")[0],

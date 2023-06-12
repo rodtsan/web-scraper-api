@@ -8,6 +8,7 @@ from Schema import Post, Profile
 from app import app, db
 from flask import jsonify, make_response, request
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from sqlalchemy.orm import Session
 
 
@@ -18,16 +19,21 @@ async def web_scrap_profile():
        return make_response({ "message": "url paramater was not provider" })
    
     options = webdriver.ChromeOptions()
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_argument(
-        "--user-data-dir=C:/Users/Rodrigo/AppData/Local/Google/Chrome/User Data/"
+        "--user-data-dir=/home/rodrigo/snap/chromium/common/chromium/"
     )
     options.add_argument("--profile-directory=Default")
     options.add_argument("--ignore-certificate-errors")
+    # # options.add_argument('--incognito')
     options.add_argument("--headless")
     options.add_argument("--log-level=3")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-infobars")
-    driver = webdriver.Chrome(options=options)
+    # driver = webdriver.Chrome(options=options)
+    chrome_service = Service("/snap/chromium/2477/usr/lib/chromium-browser/chromedriver")
+    driver = webdriver.Chrome(options=options, service=chrome_service)
     driver.get("https://www.linkedin.com/")
     
     sleep(2)

@@ -8,8 +8,8 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__, static_folder="temp")
 CORS(app)
 
-db_path = os.path.abspath(os.getcwd())
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///{}\sm_db.db".format(db_path)
+db_path = f"sqlite:///{os.getcwd()}/sm_db.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = db_path
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_DIR"] = "uploads"
 app.config["TEMP_DIR"] = "temp"
@@ -19,7 +19,6 @@ db = SQLAlchemy(app)
 #                         template_folder='templates')
 
 # app.register_blueprint(linkedin_bp, url_prefix="/api/linkedin")
-
 from modules import *
 from modules.linkedin import *
 
