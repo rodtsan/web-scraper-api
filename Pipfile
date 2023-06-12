@@ -4,6 +4,23 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+graphene = "*"
+flask-graphql = "*"
+graphene-sqlalchemy = "*"
+sqlalchemy = "*"
+pydub = "*"
+openai = "*"
+shortuuid = "*"
+python-dotenv = "*"
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+plotly = "*"
+scipy = "*"
+sklearn = "*"
+scikit-learn = "*"
+waitress = "*"
+fsspec = "*"
 
 [dev-packages]
 

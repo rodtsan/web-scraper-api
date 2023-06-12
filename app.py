@@ -1,33 +1,28 @@
-# Import Libraries 
-import os
 from flask import Flask
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import (scoped_session, sessionmaker, relationship,
-                            backref)
+from flask_graphql import GraphQLView
+from gql_schema import schema
+from data import session, Base, engine
+from api import bp
 
-# Define app.
-app = Flask(__name__, static_folder="temp")
-CORS(app)
+app = Flask(__name__)
+CORS(app, static_folder="/files/temp", resources={r"/*": {"origin": "*"}})
 
-db_path = os.path.abspath(os.getcwd())
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///{}\sm_db.db".format(db_path)
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["UPLOAD_DIR"] = "uploads"
-app.config["TEMP_DIR"] = "temp"
-db = SQLAlchemy(app)
-# db_session = scoped_session(sessionmaker(autocommit=False,
-#                                          autoflush=False,
-#                                          bind=db.get_engine()))
+app.add_url_rule(
+    rule="/graphql",
+    view_func=GraphQLView.as_view(
+        "graphql", schema=schema, graphiql=True  # for having the GraphiQL interface
+    ),
+    strict_slashes=False,
+)
 
-# linkedin_bp = Blueprint('linkedin_blueprint', __name__,
-#                         template_folder='templates')
+Base.metadata.create_all(engine)
 
-# app.register_blueprint(linkedin_bp, url_prefix="/api/linkedin")
-
-from modules import *
-from modules.linkedin import *
+app.register_blueprint(bp)
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
-    db_session.remove()
+    session.remove()
+    
+if __name__ == "__main__":
+    app.run()
